@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Скрещивалка - увлекательная игра по созданию и объединению предметов">
+    <meta name="theme-color" content="#6c5ce7">
+    <title>vice city bar game</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* ===== CSS RESET & BASE ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        :root {
+            /* iOS Colors */
+            --bg-primary: rgba(255, 255, 255, 0.07);
+            --bg-secondary: rgba(255, 255, 255, 0.1);
+            --bg-tertiary: rgba(255, 255, 255, 0.15);
+            --accent-primary: #ff3366;
+            --accent-secondary: #00ccff;
+            --accent-success: #00b894;
+            --accent-warning: #ffcc00;
+            --accent-danger: #ff7675;
+            --text-primary: rgba(255, 255, 255, 0.95);
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-tertiary: rgba(255, 255, 255, 0.5);
+            
+            /* Border Radius */
+            --radius-full: 9999px;
+            --radius-extra-large: 28px;
+            --radius-large: 20px;
+            --radius-medium: 14px;
+            --radius-small: 10px;
+            
+            /* Spacing */
+            --spacing-xs: 6px;
+            --spacing-sm: 12px;
+            --spacing-md: 18px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --spacing-xxl: 40px;
+            
+            /* Shadows */
+            --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 16px 50px rgba(0, 0, 0, 0.2);
+            --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            
+            /* Telegram Colors */
+            --telegram-bg: #0a0a0f;
+            --telegram-text: #ffffff;
+        }
+        
+        /* Улучшение производительности */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+            background: transparent;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            overflow-x: hidden;
+            background: var(--telegram-bg);
+        }
+        
+        /* Фон */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+             background-image: url('images/background.jpg'); /* ваша картинка */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            z-index: -2;
+        }
+        
+        /* Эффект блюра */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 10, 15, 0.7);
+            z-index: -1;
+        }
+        
+        /* Отключение блюра на слабых устройствах */
+        @media (max-width: 768px) {
+            body::after {
+                backdrop-filter: blur(10px) saturate(160%);
+                -webkit-backdrop-filter: blur(10px) saturate(160%);
+            }
+        }
+        
+        /* ===== LAYOUT ===== */
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: var(--spacing-md);
+        }
+        
+       
+        
+        /* ===== USER PROFILE ===== */
+        .user-profile-container {
+            background: var(--bg-primary);
+            border-radius: var(--radius-extra-large);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--spacing-md);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            flex: 1;
+        }
+        
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-full);
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .user-level {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .level-number {
+            display: block;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--accent-secondary);
+        }
+        
+        .xp-container {
+            flex: 2;
+        }
+        
+        .xp-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-xs);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .xp-bar {
+            height: 10px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .xp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: var(--radius-full);
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .xp-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.2), 
+                transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        /* ===== GAME BOARD ===== */
+        .game-board-container {
+            background: var(--bg-primary);
+            border-radius: var(--radius-extra-large);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: var(--spacing-sm);
+            aspect-ratio: 1 / 1;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .cell {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-large);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: var(--shadow-inset);
+        }
+        
+        .cell.empty {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        .cell.drag-over {
+            background: var(--accent-primary);
+            transform: scale(0.97);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .cell.drag-over::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            background: var(--accent-secondary);
+            border-radius: var(--radius-full);
+            opacity: 0.15;
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* ===== ITEMS ===== */
+        .item {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            position: relative;
+            border-radius: var(--radius-medium);
+            transition: transform 0.2s ease-out;
+            will-change: transform;
+            cursor: pointer;
+            outline: none;
+        }
+        
+        .item:focus-visible {
+            outline: 2px solid var(--accent-secondary);
+            outline-offset: 2px;
+        }
+        
+        .item.dragging {
+            z-index: 1000;
+            opacity: 0.9;
+            transform: scale(1.1);
+        }
+        
+        /* Изображение предмета (во всю площадь) */
+        .item-icon-full {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
+            border-radius: var(--radius-medium);
+            z-index: 2;
+        }
+        
+        /* Уровень предмета (поверх изображения) */
+        .item-level {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: var(--radius-full);
+            min-width: 24px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 3;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Уровень в панели информации */
+        .item-level-preview {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: var(--radius-full);
+            min-width: 18px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 3;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Изображение в панели информации */
+        .item-icon-preview {
+            width: 100%;
+            height: 100%;
+            background-size: cover !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
+            border-radius: var(--radius-medium);
+        }
+        
+        /* ===== ENERGY & CREATE PANEL ===== */
+        .action-panel {
+            background: var(--bg-primary);
+            border-radius: var(--radius-extra-large);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .action-content {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            justify-content: space-between;
+        }
+
+        .button-create-compact {
+            flex: none;
+            width: 140px;
+            height: 50px;
+            background: linear-gradient(135deg, 
+                rgba(108, 92, 231, 0.9), 
+                rgba(162, 155, 254, 0.9));
+            color: var(--text-primary);
+            border: none;
+            border-radius: var(--radius-large);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                var(--shadow-sm),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                0 0 0 1px rgba(108, 92, 231, 0.3);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            padding: 8px;
+            outline: none;
+        }
+
+        .button-create-compact::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.2), 
+                transparent);
+            transition: left 0.6s ease;
+        }
+
+        .button-create-compact:hover:not(:disabled),
+        .button-create-compact:focus:not(:disabled),
+        .button-create-compact:active:not(:disabled) {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 
+                var(--shadow-md),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                0 0 0 1px rgba(108, 92, 231, 0.5);
+        }
+
+        .button-create-compact:hover:not(:disabled)::before {
+            left: 100%;
+        }
+
+        .button-create-compact:active:not(:disabled) {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .button-create-compact:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .button-create-icon {
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+
+        .button-create-text {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .button-create-cost {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+        }
+
+        /* Спиннер для кнопки */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Компактный счетчик энергии справа */
+        .energy-compact {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .energy-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .energy-icon-compact {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, var(--accent-warning), #ff9f43);
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: var(--text-primary);
+        }
+
+        .energy-value-compact {
+            color: var(--accent-warning);
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .energy-timer {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .timer-text {
+            font-weight: 500;
+        }
+
+        .timer-countdown {
+            font-weight: 600;
+            color: var(--accent-secondary);
+            font-family: 'SF Mono', monospace;
+        }
+
+        /* Прогресс-бар восстановления энергии */
+        .energy-progress {
+            width: 100%;
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+            margin-top: 2px;
+        }
+
+        .energy-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-warning), #ff9f43);
+            border-radius: var(--radius-full);
+            transition: width 1s linear;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .energy-progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.3), 
+                transparent);
+            animation: progressShimmer 2s infinite;
+        }
+        
+        /* ===== ITEM DETAIL PANEL ===== */
+        .item-detail-panel {
+            background: var(--bg-primary);
+            border-radius: var(--radius-large);
+            padding: var(--spacing-sm) var(--spacing-md);
+            margin-top: var(--spacing-md);
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .item-detail-panel.active {
+            display: block;
+        }
+
+        .item-detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .item-detail-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .button-close {
+            background: var(--bg-tertiary);
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .button-close:hover,
+        .button-close:focus {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .item-detail-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .item-detail-preview {
+            flex: none;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .item-detail-preview .item {
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-medium);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-detail-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .item-detail-level {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-secondary);
+            white-space: nowrap;
+        }
+
+        .rewards-compact {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .reward-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+        }
+
+        .reward-label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .reward-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .reward-label .energy-icon {
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, var(--accent-warning), #ff9f43);
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            color: var(--text-primary);
+        }
+
+        .item-action-button {
+            flex: none;
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-medium);
+            background: linear-gradient(135deg, 
+                rgba(255, 118, 117, 0.9), 
+                rgba(253, 121, 168, 0.9));
+            border: none;
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 10px;
+            font-weight: 600;
+            gap: 2px;
+            outline: none;
+        }
+
+        .item-action-button:hover,
+        .item-action-button:focus {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(255, 118, 117, 0.3);
+        }
+
+        .item-action-button:active {
+            transform: scale(0.95);
+        }
+
+        .sell-icon {
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+
+        .sell-text {
+            font-size: 9px;
+        }
+        
+        /* ===== DRAGGING ELEMENT БЕЗ ТЕНИ ===== */
+        .dragging-element {
+            position: fixed !important;
+            pointer-events: none !important;
+            z-index: 9999 !important;
+            opacity: 0.7 !important;
+            transform: translate(-50%, -50%) !important;
+            transition: none !important;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.4) !important;
+            border: 2px solid rgba(255, 255, 255, 0.3) !important;
+        }
+        
+        /* ===== NOTIFICATIONS ===== */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, rgba(0, 184, 148, 0.95), rgba(0, 206, 201, 0.95));
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 9999;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s ease, slideOut 0.3s ease 2.7s;
+            max-width: 300px;
+            word-break: break-word;
+        }
+        
+        .notification.error {
+            background: linear-gradient(135deg, rgba(255, 118, 117, 0.95), rgba(253, 121, 168, 0.95));
+        }
+        
+        .notification.info {
+            background: linear-gradient(135deg, rgba(108, 92, 231, 0.95), rgba(162, 155, 254, 0.95));
+        }
+        
+        /* ===== ANIMATIONS ===== */
+        @keyframes float {
+            0% {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.1);
+                opacity: 0.8;
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.15;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                opacity: 0.25;
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+        }
+        
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+        
+        @keyframes progressShimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        @keyframes itemAppear {
+            0% {
+                opacity: 0;
+                transform: scale(0.7) rotate(-10deg);
+            }
+            70% {
+                transform: scale(1.15) rotate(5deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0);
+            }
+        }
+        
+        @keyframes itemCombine {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.3);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes itemVanish {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+                filter: blur(0);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.5);
+                filter: blur(10px);
+            }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .item-appear {
+            animation: itemAppear 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        
+        .item-combine {
+            animation: itemCombine 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        
+        .item-vanish {
+            animation: itemVanish 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        
+        /* ===== RESPONSIVE ADJUSTMENTS ===== */
+        @media (max-width: 480px) {
+            .container {
+                padding: var(--spacing-sm);
+            }
+            
+            .game-board {
+                gap: var(--spacing-xs);
+            }
+            
+            .user-profile {
+                flex-direction: column;
+                gap: var(--spacing-sm);
+            }
+            
+            .user-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .xp-container {
+                width: 100%;
+            }
+            
+            .item-detail-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .item-detail-preview {
+                max-width: 80px;
+            }
+            
+            .action-content {
+                gap: var(--spacing-sm);
+            }
+            
+            .button-create-compact {
+                width: 120px;
+                height: 45px;
+            }
+            
+            .button-create-text {
+                font-size: 12px;
+            }
+            
+            .button-create-cost {
+                font-size: 10px;
+            }
+            
+            .energy-display {
+                font-size: 13px;
+            }
+            
+            .energy-value-compact {
+                font-size: 15px;
+            }
+            
+            .energy-timer {
+                font-size: 10px;
+            }
+            
+            .item-detail-panel {
+                padding: 10px 12px;
+                margin: 10px;
+                max-width: calc(100% - 20px);
+            }
+            
+            .item-detail-content {
+                gap: 10px;
+            }
+            
+            .item-detail-preview,
+            .item-action-button {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .reward-row {
+                font-size: 10px;
+            }
+            
+            .notification {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+        }
+        
+        /* Touch device improvements */
+        .is-mobile .item {
+            touch-action: manipulation;
+        }
+        
+        /* High contrast mode */
+        @media (prefers-contrast: high) {
+            .item {
+                border: 2px solid currentColor;
+            }
+            
+            .cell {
+                border: 2px solid currentColor;
+            }
+        }
+        
+        /* Dark mode improvements */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text-primary: rgba(255, 255, 255, 0.98);
+                --text-secondary: rgba(255, 255, 255, 0.8);
+            }
+        }
+        
+        /* iOS Safari specific fixes */
+        @supports (-webkit-touch-callout: none) {
+            body {
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+            }
+        }
+        
+        /* Print styles */
+        @media print {
+            .action-panel,
+            .button-create-compact,
+            .item-action-button {
+                display: none !important;
+            }
+        }
+        /* ===== LOGO STYLES ===== */
+.logo-container {
+    position: relative;
+    margin-bottom: var(--spacing-md);
+    text-align: center;
+}
+
+.logo {
+    position: relative;
+    display: inline-block;
+    padding: 25px 60px;
+    border-radius: var(--radius-extra-large);
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+/* Тонкий градиент для глубины */
+.logo::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent);
+}
+
+.text-wrapper {
+    position: relative;
+    z-index: 2;
+}
+
+/* Основной текст Vice City Bar - курсивный шрифт как в GTA */
+.main-text {
+    font-family: 'Brush Script MT', 'Lucida Calligraphy', 'Segoe Script', cursive;
+    font-size: clamp(3rem, 8vw, 4rem);
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: 1px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* Отдельные стили для каждой части текста */
+.vice-part {
+    display: inline-block;
+    color: #ff3366;
+    text-shadow: 
+        0 0 10px rgba(255, 51, 102, 0.8),
+        0 0 20px rgba(255, 51, 102, 0.5);
+    transform: skew(-5deg) rotate(-1deg);
+    padding: 0 3px;
+}
+
+.city-part {
+    display: inline-block;
+    color: #00ccff;
+    text-shadow: 
+        0 0 10px rgba(0, 204, 255, 0.8),
+        0 0 20px rgba(0, 204, 255, 0.5);
+    transform: skew(3deg) rotate(2deg);
+    padding: 0 3px;
+}
+
+.bar-part {
+    display: inline-block;
+    background: linear-gradient(45deg, #ffcc00, #ff9900);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 
+        0 0 8px rgba(255, 204, 0, 0.6),
+        0 0 15px rgba(255, 153, 0, 0.4);
+    transform: skew(-2deg) rotate(-3deg);
+    padding: 0 3px 0 6px;
+}
+
+/* Надпись Game - подтянута к Bar */
+.game-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    align-items: baseline;
+    margin-top: -6px;
+}
+
+.game-text {
+    font-family: 'Arial Narrow', 'Arial', sans-serif;
+    font-size: clamp(1rem, 3vw, 1.3rem);
+    font-weight: 300;
+    font-style: italic;
+    color: #ffcc00;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    text-shadow: 
+        0 0 8px rgba(255, 204, 0, 0.9),
+        0 0 15px rgba(255, 204, 0, 0.5);
+    transform: translateX(-15px) translateY(-5px) rotate(-1deg);
+    opacity: 0.9;
+}
+
+/* Неоновое свечение */
+.neon-effect {
+    animation: neonPulse 3s infinite alternate;
+}
+
+@keyframes neonPulse {
+    0% {
+        filter: brightness(1) contrast(1);
+    }
+    100% {
+        filter: brightness(1.15) contrast(1.1);
+    }
+}
+
+/* Эффект отражения */
+.reflection {
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(to bottom, 
+        rgba(255, 255, 255, 0.1) 0%, 
+        rgba(255, 255, 255, 0.05) 30%, 
+        transparent 100%);
+    border-radius: 0 0 var(--radius-extra-large) var(--radius-extra-large);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 480px) {
+    .logo {
+        padding: 20px 40px;
+    }
+    
+    .main-text {
+        font-size: clamp(2.2rem, 7vw, 2.8rem);
+    }
+    
+    .game-text {
+        letter-spacing: 4px;
+        transform: translateX(-10px) translateY(-4px) rotate(-1deg);
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Логотип Vice City Bar Game -->
+        <div class="logo-container">
+            <div class="logo">
+                <div class="text-wrapper neon-effect">
+                    <div class="main-text">
+                        <span class="vice-part">Vice</span>
+                        <span class="city-part">City</span>
+                        <span class="bar-part">Bar</span>
+                    </div>
+                    <div class="game-wrapper">
+                        <span class="game-text">Game</span>
+                    </div>
+                </div>
+                <div class="reflection"></div>
+            </div>
+        </div>
+        
+        <!-- Профиль пользователя -->
+        <div class="user-profile-container">
+            <div class="user-profile">
+                <div class="user-info">
+                    <div class="user-avatar" role="img" aria-label="Аватар игрока">👤</div>
+                    <div>
+                        <span class="user-level">Уровень</span>
+                        <span class="level-number" id="userLevel">1</span>
+                    </div>
+                </div>
+                <div class="xp-container">
+                    <div class="xp-label">
+                        <span>Опыт</span>
+                        <span id="xpText">0 / 1000</span>
+                    </div>
+                    <div class="xp-bar" role="progressbar" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="0">
+                        <div class="xp-fill" id="xpBar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Игровое поле 4x4 -->
+        <div class="game-board-container">
+            <div class="game-board" id="gameBoard" role="grid" aria-label="Игровое поле 4 на 4 ячейки">
+                <!-- Ячейки будут сгенерированы JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Панель создания предметов и энергии -->
+        <div class="action-panel">
+            <div class="action-content">
+                <!-- Кнопка создания слева -->
+                <button class="button-create-compact" id="createBtn" aria-label="Создать предмет за 5 единиц энергии">
+                    <div class="button-create-icon">✨</div>
+                    <div class="button-create-text">Создать</div>
+                    <div class="button-create-cost">5 энергии</div>
+                </button>
+                
+                <!-- Счетчик энергии справа -->
+                <div class="energy-compact">
+                    <div class="energy-display">
+                        <div class="energy-icon-compact" aria-hidden="true">⚡</div>
+                        <div class="energy-value-compact" id="energyValue">50</div>
+                    </div>
+                    <div class="energy-timer">
+                        <span class="timer-text">Следующая:</span>
+                        <span class="timer-countdown" id="energyTimer">10:00</span>
+                    </div>
+                    <div class="energy-progress" role="progressbar" aria-label="Восстановление энергии">
+                        <div class="energy-progress-fill" id="energyProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Панель информации о предмете -->
+        <div class="item-detail-panel" id="itemDetailPanel" aria-hidden="true">
+            <div class="item-detail-header">
+                <h3 class="item-detail-title">Информация о предмете</h3>
+                <button class="button-close" id="closeDetailBtn" aria-label="Закрыть информацию о предмете">✕</button>
+            </div>
+            
+            <div class="item-detail-content">
+                <div class="item-detail-preview" id="itemPreview">
+                    <!-- Предмет будет отображен здесь -->
+                </div>
+                <div class="item-detail-info">
+                    <div class="item-detail-level" id="itemDetailLevel">Уровень: 1</div>
+                    <div class="rewards-compact">
+                        <div class="reward-row">
+                            <div class="reward-label">
+                                <div class="energy-icon" aria-hidden="true">⚡</div>
+                                <span>Продажа:</span>
+                            </div>
+                            <div class="reward-value" id="sellXp">1 XP</div>
+                        </div>
+                        <div class="reward-row">
+                            <div class="reward-label">
+                                <div class="energy-icon" aria-hidden="true">+</div>
+                                <span>Энергия:</span>
+                            </div>
+                            <div class="reward-value" id="sellEnergy">1</div>
+                        </div>
+                        <div class="reward-row">
+                            <div class="reward-label">
+                                <div class="energy-icon" aria-hidden="true">⚡</div>
+                                <span>Скрещивание:</span>
+                            </div>
+                            <div class="reward-value" id="combineXp">10 XP</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="item-action-button" id="sellBtn" aria-label="Продать предмет">
+                    <div class="sell-icon">💰</div>
+                    <div class="sell-text">Продать</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
