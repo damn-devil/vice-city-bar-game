@@ -6,7 +6,7 @@ const CONFIG = {
     MAX_USER_LEVEL: 100,
     XP_PER_LEVEL: 1000,
     ENERGY_MAX: 50,
-    ENERGY_RESTORE_TIME: 10 * 60 * 1000, // 10 минут
+    ENERGY_RESTORE_TIME: 1 * 60 * 1000, // 10 минут
     ITEM_COST: 5,
     SAVE_INTERVAL: 30000,
     LOCAL_STORAGE_KEY: 'crafting_game_full_v3'
@@ -90,6 +90,20 @@ function preloadImages() {
         img.onerror = () => {
             console.warn(`✗ ${url} не найден`);
         };
+    }
+}
+// ===== ПРОВЕРКА И ПОДДЕРЖКА ВИБРАЦИИ =====
+function supportsVibration() {
+    return 'vibrate' in navigator;
+}
+
+function vibrate(pattern) {
+    if (supportsVibration() && isMobile) {
+        try {
+            navigator.vibrate(pattern);
+        } catch (error) {
+            console.warn('Ошибка вибрации:', error);
+        }
     }
 }
 
@@ -207,6 +221,7 @@ function addXP(amount) {
 
 // ===== УВЕДОМЛЕНИЕ О ПОВЫШЕНИИ УРОВНЯ =====
 function showLevelUpNotification() {
+    vibrate([150, 100, 150, 100, 150]);
     const notification = document.createElement('div');
     notification.setAttribute('role', 'alert');
     notification.setAttribute('aria-live', 'assertive');
@@ -340,6 +355,7 @@ function createItem() {
     if (userData.energy < CONFIG.ITEM_COST) {
         console.warn('Недостаточно энергии');
         showNotification('Недостаточно энергии!', 'error');
+        vibrate([100, 50, 100]);
         isProcessing = false;
         return;
     }
@@ -348,6 +364,7 @@ function createItem() {
     if (emptyCellIndex === -1) {
         console.warn('Нет свободных ячеек');
         showNotification('Нет свободных ячеек!', 'error');
+        vibrate([100, 50, 100]);
         isProcessing = false;
         return;
     }
@@ -363,6 +380,7 @@ function createItem() {
     gameBoard[emptyCellIndex] = newItem;
     
     setTimeout(() => {
+        vibrate([100, 50, 100]);
         renderGameBoard();
         updateUserStats();
         saveGameState();
@@ -392,6 +410,8 @@ function sellItem(itemIndex) {
     addXP(xpReward);
     userData.energy += energyReward;
     gameBoard[itemIndex] = null;
+
+    vibrate([30, 20, 30, 20]);
     
     // Показываем награду
     showNotification(`+${xpReward} XP, +${energyReward} энергии`, 'success');
@@ -981,6 +1001,42 @@ function handleItemDrop(fromIndex, toIndex) {
     }
     
     if (toItem === null) {
+        vibrate(50);
+        gameBoard[toIndex] = fromItem;
+        gameBoard[fromIndex] = null;
+    } else if (fromItem.level === toItem.level) {
+        // Скрещиваем одинаковые предметы - более длинная вибрация
+        const newLevel = fromItem.level + 1;
+        if (newLevel <= CONFIG.MAX_ITEM_LEVEL) {
+            // Успешное скрещивание - серия вибраций
+            vibrate([100, 50, 100]);
+            
+            const xpGained = COMBINE_XP[fromItem.level] || 0;
+            addXP(xpGained);
+            
+            gameBoard[toIndex] = {
+                id: Date.now() + Math.random(),
+                level: newLevel,
+                createdAt: Date.now()
+            };
+            gameBoard[fromIndex] = null;
+            showNotification(`Создан предмет уровня ${newLevel}!`, 'success');
+        } else {
+            // Достигнут максимальный уровень - другая вибрация
+            vibrate([200, 100]);
+            [gameBoard[fromIndex], gameBoard[toIndex]] = [toItem, fromItem];
+        }
+    } else {
+        // Разные уровни - короткая одиночная вибрация
+        vibrate(50);
+        [gameBoard[fromIndex], gameBoard[toIndex]] = [toItem, fromItem];
+    }
+    
+    setTimeout(() => {
+        renderGameBoard();
+        saveGameState();
+        isProcessing = false;
+    }, 100);
         // Просто перемещаем предмет
         gameBoard[toIndex] = fromItem;
         gameBoard[fromIndex] = null;
@@ -1128,6 +1184,7 @@ function setupButtonEvents() {
     const createBtn = document.getElementById('createBtn');
     if (createBtn) {
         createBtn.addEventListener('click', createItem);
+        vibrate(20);
         // Keyboard support
         createBtn.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -1140,6 +1197,7 @@ function setupButtonEvents() {
     const sellBtn = document.getElementById('sellBtn');
     if (sellBtn) {
         sellBtn.addEventListener('click', () => {
+            vibrate(20);
             if (selectedItemIndex !== null) sellItem(selectedItemIndex);
         });
         sellBtn.addEventListener('keydown', (e) => {
@@ -1156,6 +1214,7 @@ function setupButtonEvents() {
         closeBtn.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
+                vibrate(10);
                 hideItemDetail();
             }
         });
