@@ -94,16 +94,34 @@ function preloadImages() {
 }
 // ===== ПРОВЕРКА И ПОДДЕРЖКА ВИБРАЦИИ =====
 function supportsVibration() {
-    return 'vibrate' in navigator;
+    // Проверяем поддержку вибрации в браузере ИЛИ в Telegram WebApp
+    return 'vibrate' in navigator || 
+           (typeof Telegram !== 'undefined' && Telegram.WebApp && Telegram.WebApp.HapticFeedback);
 }
 
 function vibrate(pattern) {
-    if (supportsVibration() && isMobile) {
-        try {
-            navigator.vibrate(pattern);
-        } catch (error) {
-            console.warn('Ошибка вибрации:', error);
+    if (!supportsVibration() || isProcessing) return;
+    
+    try {
+        // Telegram Mini Apps
+        if (typeof Telegram !== 'undefined' && Telegram.WebApp && Telegram.WebApp.HapticFeedback) {
+            if (pattern === 50 || (Array.isArray(pattern) && pattern[0] === 50)) {
+                Telegram.WebApp.HapticFeedback.impactOccurred('light');
+            } else if (pattern === 100 || (Array.isArray(pattern) && pattern[0] === 100)) {
+                Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+            } else if (pattern === 200 || (Array.isArray(pattern) && pattern[0] === 200)) {
+                Telegram.WebApp.HapticFeedback.impactOccurred('heavy');
+            } else if (Array.isArray(pattern) && pattern.length > 2) {
+                // Для сложных паттернов используем notificationOccurred
+                Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+            }
         }
+        // Обычный браузер
+        else if ('vibrate' in navigator) {
+            navigator.vibrate(pattern);
+        }
+    } catch (error) {
+        console.warn('Ошибка вибрации:', error);
     }
 }
 
@@ -115,6 +133,15 @@ function initTelegramApp() {
             Telegram.WebApp.expand();
             Telegram.WebApp.setBackgroundColor('#0a0a0f');
             Telegram.WebApp.setHeaderColor('#0a0a0f');
+            
+            // Тест вибрации при запуске (опционально)
+            setTimeout(() => {
+                if (supportsVibration()) {
+                    console.log('Вибрация доступна в Telegram Mini App');
+                    // Можно убрать эту тестовую вибрацию
+                    // vibrate(50);
+                }
+            }, 1000);
             
             // Обработка смены темы
             Telegram.WebApp.onEvent('themeChanged', updateTheme);
@@ -143,7 +170,13 @@ function updateTheme() {
 
 // ===== ОПРЕДЕЛЕНИЕ УСТРОЙСТВА =====
 function detectDevice() {
-    isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|Windows Phone/i.test(navigator.userAgent);
+    // Telegram Mini Apps всегда на мобильных устройствах
+    if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+        isMobile = true;
+        console.log('Telegram Mini App - мобильное устройство');
+    } else {
+        isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|Windows Phone/i.test(navigator.userAgent);
+    }
     
     // Добавляем класс для улучшения touch
     if (isMobile) {
@@ -1001,16 +1034,15 @@ function handleItemDrop(fromIndex, toIndex) {
     }
     
     if (toItem === null) {
-        // Просто перемещаем предмет - короткая вибрация
+        // Просто перемещаем предмет - легкая вибрация
         vibrate(50);
         gameBoard[toIndex] = fromItem;
         gameBoard[fromIndex] = null;
     } else if (fromItem.level === toItem.level) {
-        // Скрещиваем одинаковые предметы - более длинная вибрация
         const newLevel = fromItem.level + 1;
         if (newLevel <= CONFIG.MAX_ITEM_LEVEL) {
-            // Успешное скрещивание - серия вибраций
-            vibrate([100, 50, 100]);
+            // Успешное скрещивание - средняя вибрация
+            vibrate(100);
             
             const xpGained = COMBINE_XP[fromItem.level] || 0;
             addXP(xpGained);
@@ -1023,12 +1055,12 @@ function handleItemDrop(fromIndex, toIndex) {
             gameBoard[fromIndex] = null;
             showNotification(`Создан предмет уровня ${newLevel}!`, 'success');
         } else {
-            // Достигнут максимальный уровень - другая вибрация
-            vibrate([200, 100]);
+            // Достигнут максимальный уровень - сильная вибрация
+            vibrate(200);
             [gameBoard[fromIndex], gameBoard[toIndex]] = [toItem, fromItem];
         }
     } else {
-        // Разные уровни - короткая одиночная вибрация
+        // Разные уровни - легкая вибрация
         vibrate(50);
         [gameBoard[fromIndex], gameBoard[toIndex]] = [toItem, fromItem];
     }
