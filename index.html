@@ -386,9 +386,10 @@
             flex: none;
             width: 140px;
             height: 50px;
-            background: linear-gradient(135deg, 
-                rgba(108, 92, 231, 0.9), 
-                rgba(162, 155, 254, 0.9));
+            /* Прозрачный фон с блюром */
+            background: rgba(108, 92, 231, 0.15);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
             color: var(--text-primary);
             border: none;
             border-radius: var(--radius-large);
@@ -397,9 +398,9 @@
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 
-                var(--shadow-sm),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2),
-                0 0 0 1px rgba(108, 92, 231, 0.3);
+                0 8px 32px rgba(108, 92, 231, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
             position: relative;
             overflow: hidden;
             display: flex;
@@ -409,6 +410,8 @@
             gap: 2px;
             padding: 8px;
             outline: none;
+            /* Для плавной анимации блюра */
+            will-change: backdrop-filter, background;
         }
 
         .button-create-compact::before {
@@ -426,13 +429,15 @@
         }
 
         .button-create-compact:hover:not(:disabled),
-        .button-create-compact:focus:not(:disabled),
-        .button-create-compact:active:not(:disabled) {
+        .button-create-compact:focus:not(:disabled),{
+            background: rgba(108, 92, 231, 0.25);
+            backdrop-filter: blur(25px) saturate(200%);
+            -webkit-backdrop-filter: blur(25px) saturate(200%);
             transform: translateY(-2px) scale(1.02);
             box-shadow: 
-                var(--shadow-md),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3),
-                0 0 0 1px rgba(108, 92, 231, 0.5);
+                0 12px 40px rgba(108, 92, 231, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
         }
 
         .button-create-compact:hover:not(:disabled)::before {
@@ -440,14 +445,25 @@
         }
 
         .button-create-compact:active:not(:disabled) {
+            background: rgba(108, 92, 231, 0.35);
+            backdrop-filter: blur(15px) saturate(160%);
+            -webkit-backdrop-filter: blur(15px) saturate(160%);
             transform: translateY(0) scale(0.98);
+            box-shadow: 
+                0 4px 20px rgba(108, 92, 231, 0.25),
+                inset 0 2px 0 rgba(0, 0, 0, 0.1),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
         }
 
         .button-create-compact:disabled {
-            opacity: 0.5;
+            background: rgba(128, 128, 128, 0.1);
+            backdrop-filter: blur(10px) saturate(120%);
+            -webkit-backdrop-filter: blur(10px) saturate(120%);
             cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
+            opacity: 0.7;
+            box-shadow: 
+                0 4px 20px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
 
         .button-create-icon {
@@ -1214,7 +1230,7 @@
         <div class="action-panel">
             <div class="action-content">
                 <!-- Кнопка создания слева -->
-                <button class="button-create-compact" id="createBtn" aria-label="Создать предмет за 5 единиц энергии">
+                <button class="button-create-compact" id="createBtn" aria-label="Создать 5 ед">
                     <div class="button-create-icon">✨</div>
                     <div class="button-create-text">Создать</div>
                     <div class="button-create-cost">5 энергии</div>
