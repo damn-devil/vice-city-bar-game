@@ -70,42 +70,45 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
-            background: transparent;
-            color: var(--text-primary);
-            min-height: 100vh;
-            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-            overflow-x: hidden;
-            background: var(--telegram-bg);
-        }
-        
-        /* Фон */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-             background-image: url('images/background.jpg'); /* ваша картинка */
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            z-index: -2;
-        }
-        
-        /* Эффект блюра */
-        body::after {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(10, 10, 15, 0.7);
-            z-index: -1;
-        }
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+    background: transparent;
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    overflow-x: hidden;
+    background: transparent !important;
+}
+
+/* Фоновая картинка - видна полностью */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('images/background.jpg'); /* ваша картинка */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    z-index: -3; /* Увеличиваем индекс, чтобы была под всем */
+    filter: brightness(1.1) saturate(1.1); /* Можно настроить яркость */
+}
+
+/* Убираем темный оверлей полностью */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent; /* Полностью прозрачный */
+    z-index: -2;
+    backdrop-filter: none; /* Убираем блюр */
+    -webkit-backdrop-filter: none;
+}
         
         /* Отключение блюра на слабых устройствах */
         @media (max-width: 768px) {
