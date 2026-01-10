@@ -134,12 +134,13 @@ function initTelegramApp() {
             Telegram.WebApp.setBackgroundColor('#0a0a0f');
             Telegram.WebApp.setHeaderColor('#0a0a0f');
             
+            // Загружаем данные пользователя
+            loadTelegramUserData();
+            
             // Тест вибрации при запуске (опционально)
             setTimeout(() => {
                 if (supportsVibration()) {
                     console.log('Вибрация доступна в Telegram Mini App');
-                    // Можно убрать эту тестовую вибрацию
-                    // vibrate(50);
                 }
             }, 1000);
             
@@ -155,6 +156,220 @@ function initTelegramApp() {
             });
         } catch (error) {
             console.warn('Telegram Web App не доступен');
+        }
+    }
+}
+// ===== ОБРАБОТКА ОБНОВЛЕНИЙ ПРОФИЛЯ =====
+function setupTelegramProfileUpdates() {
+    if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+        // Можно слушать события изменения профиля
+        Telegram.WebApp.onEvent('themeChanged', () => {
+            // При смене темы можно обновить что-то
+        });
+        
+        // Проверяем данные периодически (на случай обновления аватара)
+        setInterval(() => {
+            const user = Telegram.WebApp.initDataUnsafe?.user;
+            if (user && window.telegramUser && user.photo_url !== window.telegramUser.photo_url) {
+                console.log('Аватар пользователя обновился');
+                updateTelegramAvatar(user);
+                window.telegramUser = user;
+            }
+        }, 30000); // Каждые 30 секунд
+    }
+}
+// ===== ЗАГРУЗКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ TELEGRAM =====
+function loadTelegramUserData() {
+    if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+        try {
+            const user = Telegram.WebApp.initDataUnsafe?.user;
+            
+            if (user) {
+                console.log('Данные пользователя Telegram:', user);
+                
+                // Обновляем аватар
+                updateTelegramAvatar(user);
+                
+                // Можно сохранить данные пользователя для дальнейшего использования
+                window.telegramUser = user;
+                
+                return user;
+            } else {
+                console.log('Данные пользователя Telegram не доступны');
+                return null;
+            }
+        } catch (error) {
+            console.warn('Ошибка загрузки данных пользователя Telegram:', error);
+            return null;
+        }
+    }
+    return null;
+}
+// ===== ЗАГРУЗКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ TELEGRAM =====
+function loadTelegramUserData() {
+    if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+        try {
+            const user = Telegram.WebApp.initDataUnsafe?.user;
+            
+            if (user) {
+                console.log('Данные пользователя Telegram:', user);
+                
+                // Обновляем аватар
+                updateTelegramAvatar(user);
+                
+                // Можно сохранить данные пользователя для дальнейшего использования
+                window.telegramUser = user;
+                
+                return user;
+            } else {
+                console.log('Данные пользователя Telegram не доступны');
+                // Показываем случайный аватар для демо
+                showDemoAvatar();
+                return null;
+            }
+        } catch (error) {
+            console.warn('Ошибка загрузки данных пользователя Telegram:', error);
+            showDemoAvatar();
+            return null;
+        }
+    } else {
+        // Веб-версия: показываем демо-аватар
+        showDemoAvatar();
+        return null;
+    }
+}
+
+// ===== ДЕМО-АВАТАР ДЛЯ ВЕБ-ВЕРСИИ =====
+function showDemoAvatar() {
+    const placeholder = document.querySelector('.avatar-placeholder');
+    if (!placeholder) return;
+    
+    // Случайный цвет и инициал
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const randomLetter = letters[Math.floor(Math.random() * letters.length)];
+    const colors = [
+        'linear-gradient(135deg, #FF3366, #FF0066)',
+        'linear-gradient(135deg, #00CCFF, #0066FF)',
+        'linear-gradient(135deg, #00B894, #00D8A7)',
+        'linear-gradient(135deg, #FFCC00, #FF9900)'
+    ];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    
+    placeholder.textContent = randomLetter;
+    placeholder.style.fontSize = '18px';
+    placeholder.style.fontWeight = '700';
+    placeholder.style.background = randomColor;
+}
+
+// ===== ОБНОВЛЕНИЕ АВАТАРА TELEGRAM =====
+function updateTelegramAvatar(user) {
+    const avatarElement = document.getElementById('telegramAvatar');
+    const placeholder = document.querySelector('.avatar-placeholder');
+    
+    if (!avatarElement || !placeholder) return;
+    
+    // Если есть фото профиля
+    if (user.photo_url) {
+        // Создаем изображение для загрузки
+        const img = new Image();
+        
+        img.onload = () => {
+            // Показываем реальную аватарку
+            avatarElement.src = user.photo_url;
+            avatarElement.style.display = 'block';
+            placeholder.style.display = 'none';
+            
+            // Добавляем эффект появления
+            avatarElement.style.opacity = '0';
+            setTimeout(() => {
+                avatarElement.style.opacity = '1';
+                avatarElement.style.transition = 'opacity 0.3s ease';
+            }, 100);
+        };
+        
+        img.onerror = () => {
+            // Если ошибка загрузки, показываем инициалы
+            showUserInitials(user);
+        };
+        
+        img.src = user.photo_url;
+        
+    } else if (user.first_name) {
+        // Если нет фото, показываем инициалы
+        showUserInitials(user);
+    }
+}
+
+// ===== ПОКАЗАТЬ ИНИЦИАЛЫ ПОЛЬЗОВАТЕЛЯ =====
+function showUserInitials(user) {
+    const placeholder = document.querySelector('.avatar-placeholder');
+    if (!placeholder) return;
+    
+    let initials = '';
+    
+    if (user.first_name) {
+        initials += user.first_name.charAt(0).toUpperCase();
+    }
+    
+    if (user.last_name) {
+        initials += user.last_name.charAt(0).toUpperCase();
+    }
+    
+    // Если есть только username
+    if (!initials && user.username) {
+        initials = user.username.charAt(0).toUpperCase();
+    }
+    
+    // Если вообще ничего нет
+    if (!initials) {
+        initials = '👤';
+    }
+    
+    placeholder.textContent = initials;
+    placeholder.style.fontSize = '18px';
+    placeholder.style.fontWeight = '700';
+    placeholder.style.background = generateUserColor(user.id || Date.now());
+}
+
+// ===== ГЕНЕРАЦИЯ ЦВЕТА ДЛЯ АВАТАРА =====
+function generateUserColor(userId) {
+    const colors = [
+        'linear-gradient(135deg, #FF3366, #FF0066)', // Красный
+        'linear-gradient(135deg, #00CCFF, #0066FF)', // Синий
+        'linear-gradient(135deg, #00B894, #00D8A7)', // Зеленый
+        'linear-gradient(135deg, #FFCC00, #FF9900)', // Желтый
+        'linear-gradient(135deg, #9B59B6, #8E44AD)', // Фиолетовый
+        'linear-gradient(135deg, #FF7675, #FD79A8)', // Розовый
+        'linear-gradient(135deg, #00CEC9, #00B4D8)', // Бирюзовый
+        'linear-gradient(135deg, #FDCB6E, #E17055)'  // Оранжевый
+    ];
+    
+    // Генерируем индекс на основе ID пользователя
+    const index = Math.abs(userId) % colors.length;
+    return colors[index];
+}
+
+// ===== ОБНОВЛЕНИЕ ИМЕНИ ПОЛЬЗОВАТЕЛЯ (опционально) =====
+function updateUserName(user) {
+    // Можно добавить отображение имени пользователя
+    if (user.first_name) {
+        const nameElement = document.createElement('div');
+        nameElement.className = 'user-name';
+        nameElement.textContent = user.first_name;
+        nameElement.style.fontSize = '14px';
+        nameElement.style.fontWeight = '600';
+        nameElement.style.color = 'var(--text-primary)';
+        nameElement.style.marginTop = '4px';
+        
+        const userInfo = document.querySelector('.user-info');
+        if (userInfo) {
+            // Добавляем после уровня
+            const levelDiv = userInfo.querySelector('.level-number').parentNode;
+            if (levelDiv.nextSibling) {
+                userInfo.insertBefore(nameElement, levelDiv.nextSibling);
+            } else {
+                userInfo.appendChild(nameElement);
+            }
         }
     }
 }
@@ -1292,6 +1507,7 @@ function initGame() {
     setupButtonEvents();
     setupTelegramResetButton();
     setupAutoSave();
+    setupTelegramProfileUpdates(); // <-- Добавить эту строку
     
     console.log('=== ИГРА ГОТОВА ===');
 }
