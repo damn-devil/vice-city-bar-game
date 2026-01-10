@@ -1001,6 +1001,7 @@ function handleItemDrop(fromIndex, toIndex) {
     }
     
     if (toItem === null) {
+        // Просто перемещаем предмет - короткая вибрация
         vibrate(50);
         gameBoard[toIndex] = fromItem;
         gameBoard[fromIndex] = null;
@@ -1029,37 +1030,6 @@ function handleItemDrop(fromIndex, toIndex) {
     } else {
         // Разные уровни - короткая одиночная вибрация
         vibrate(50);
-        [gameBoard[fromIndex], gameBoard[toIndex]] = [toItem, fromItem];
-    }
-    
-    setTimeout(() => {
-        renderGameBoard();
-        saveGameState();
-        isProcessing = false;
-    }, 100);
-        // Просто перемещаем предмет
-        gameBoard[toIndex] = fromItem;
-        gameBoard[fromIndex] = null;
-    } else if (fromItem.level === toItem.level) {
-        // Скрещиваем одинаковые предметы
-        const newLevel = fromItem.level + 1;
-        if (newLevel <= CONFIG.MAX_ITEM_LEVEL) {
-            const xpGained = COMBINE_XP[fromItem.level] || 0;
-            addXP(xpGained);
-            
-            gameBoard[toIndex] = {
-                id: Date.now() + Math.random(),
-                level: newLevel,
-                createdAt: Date.now()
-            };
-            gameBoard[fromIndex] = null;
-            showNotification(`Создан предмет уровня ${newLevel}!`, 'success');
-        } else {
-            // Достигнут максимальный уровень - просто меняем местами
-            [gameBoard[fromIndex], gameBoard[toIndex]] = [toItem, fromItem];
-        }
-    } else {
-        // Разные уровни - просто меняем местами
         [gameBoard[fromIndex], gameBoard[toIndex]] = [toItem, fromItem];
     }
     
@@ -1183,8 +1153,10 @@ function resetGame() {
 function setupButtonEvents() {
     const createBtn = document.getElementById('createBtn');
     if (createBtn) {
-        createBtn.addEventListener('click', createItem);
-        vibrate(20);
+        createBtn.addEventListener('click', () => {
+            if (!isProcessing) vibrate(20);
+            createItem();
+        });
         // Keyboard support
         createBtn.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
